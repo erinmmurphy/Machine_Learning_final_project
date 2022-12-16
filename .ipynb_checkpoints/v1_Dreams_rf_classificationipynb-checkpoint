@@ -1,0 +1,574 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "ce2163c1-c225-4fb4-aa5c-538df45e8edb",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import sklearn \n",
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer\n",
+    "from sklearn.ensemble import RandomForestClassifier\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "from sklearn.pipeline import Pipeline"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "350d4f4c-09cb-4814-8577-638e10cb1002",
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(21001, 21)"
+      ]
+     },
+     "execution_count": 2,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "df_dreams = pd.read_csv('data/rsos_dream_data.csv')\n",
+    "df_dreams.head(8)\n",
+    "df_dreams.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "551fc544-4412-42f6-9385-ed2361d8d9b6",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_dreams = df_dreams[['text_dream','emotions_code']].dropna()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "d6dfeec1-7db6-4972-ae48-6897640dee5d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_dreams['text_dream'] = df_dreams['text_dream'].str.lower()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "641f23ff-7010-41b4-8fc1-c79170d3fa47",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_dreams.head(8)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "9c94b7ed-8f90-4c10-a1fc-cff10f9e9061",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_dreams.info()"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "0be6514f-2679-4605-889e-74d89fc8f5f4",
+   "metadata": {},
+   "source": [
+    "#### Splitting emotions_code column to keep only the first emotion code."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "ddeced96-3e65-4aba-b159-9ebb343c8fbf",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_dreams[\"emotion_code\"] = df_dreams['emotions_code'].str.split(\" \", n = 1, expand = True)[0]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "488537d1-c58b-49e4-8972-f5b250c2845f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_dreams[\"emotion_code\"].value_counts()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "d7fb8cd6-6c55-4807-8a5e-ce3afdf4c164",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_dreams.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "ed072aa6-cb48-4fb6-93c9-a26813072c08",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "target_codes = [\"AP\", \"HA\", \"AN\", \"CO\", \"SD\"]\n",
+    "\n",
+    "df_dreams = df_dreams[df_dreams['emotion_code'].isin(target_codes)]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "2d1e9b49-31f6-4be2-82a2-943c76148d7e",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "categories = {\n",
+    "    'AP': 'Apprehension',\n",
+    "    'HA': 'Happiness',\n",
+    "    'AN': 'Anger',\n",
+    "    'CO': 'Confusion',\n",
+    "    'SD': 'Sadness'\n",
+    "}\n",
+    "\n",
+    "print(categories)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "73fa0476-4994-47df-ab0b-f9c30638eec5",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df_dreams.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "b44e4c78-46b8-4eb0-b003-1c7b69a9f254",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "X = df_dreams['text_dream'].to_list()\n",
+    "y = df_dreams['emotion_code'].to_list()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "a96fb630-9927-4425-a4b2-22b0c98f6002",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "type(X), len(X)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "754d619a-89d1-4d9e-a547-23289692bdac",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "len(X),len(y)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "fa17fe5a-68cc-43bc-aa15-47a499247295",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "975073f3-109f-40de-ad8d-f3a40c9708d7",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "print(\"X_train shape: {}\" .format(len(X_train)))\n",
+    "print(\"y_train shape: {}\" .format(len(y_train)))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e8b6bc60-33a4-401e-b2a7-2128b7f50f5d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "print(\"X_test shape: {}\" .format(len(X_test)))\n",
+    "print(\"y_test shape: {}\" .format(len(y_test)))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "1ca6d149-e7dd-45ad-82d8-41b989691968",
+   "metadata": {},
+   "source": [
+    "### Tokenizing text with scikit-learn"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "ebaf9272-02de-4485-9672-c1810607afa2",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "count_vect = CountVectorizer()\n",
+    "X_train_counts = count_vect.fit_transform(X_train)\n",
+    "X_train_counts.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "ceda37eb-6273-4539-92d5-5073446bb044",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "X_test_counts = count_vect.transform(X_test)\n",
+    "X_test_counts.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "243f5dc3-ba93-452a-86a8-4e1a3b4b7990",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "type(X_test)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "9473c4f3-8f35-43c0-a8db-46a0db3537f0",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "count_vect.vocabulary_.get(u'algorithm')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8a8f0e99-daac-4e8b-9fe9-a0592b705a04",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "type(X_train_counts)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e387912c-8bea-49d8-b372-32ab1a93ac0b",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "markdown",
+   "id": "8873e755-e2df-4cbb-922a-8dd6e15af4f1",
+   "metadata": {},
+   "source": [
+    "### Term frequencies"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "2a428900-4250-4f8b-ad02-a9a4ad54ce53",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "tfidf_transformer = TfidfTransformer()\n",
+    "X_train_tfidf = tfidf_transformer.fit_transform(X_train_counts)\n",
+    "X_train_tfidf.shape\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8a3d8cb6-88de-4222-b823-2e6bbff9a94f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "X_test_tfidf = tfidf_transformer.transform(X_test_counts)\n",
+    "X_test_tfidf.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "7e9de575-8704-414e-b714-aa205d3ab812",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "X_train_tfidf.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "1bec1680-0584-4f42-b10a-203701462203",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "y_train.shape"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "179af2f2-4f48-47da-b9e4-81bbb4e731f7",
+   "metadata": {},
+   "source": [
+    "### Training a classifier"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "96c6e4d4-617f-4a23-bd75-5a0c3439e63d",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.ensemble import RandomForestClassifier\n",
+    "clf = RandomForestClassifier().fit(X_train_tfidf, y_train)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "2af4c313-243b-419c-b00a-618f5bd349c2",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "X_test[5]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8841cb10-a4c2-4a97-bb18-c8e3b49cba43",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "sample_dream = X_test[5]\n",
+    "X_new_counts = count_vect.transform([sample_dream])\n",
+    "X_new_tfidf = tfidf_transformer.transform(X_new_counts)\n",
+    "\n",
+    "predicted = clf.predict(X_new_tfidf)\n",
+    "\n",
+    "#for doc, category in zip(docs_new, predicted):\n",
+    "    #print('%r => %s' % (doc, twenty_train.target_names[category]))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "53783612-97b8-49ed-a1a0-af669df63de8",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "type([sample_dream])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c4de256a-2d65-401a-aa9f-b5e248c3af98",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "predicted, y_test[5]"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "21894b9a-75a4-4510-9245-4a20e6bb8de4",
+   "metadata": {},
+   "source": [
+    "#### Building a pipeline"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "ae3f9df9-0e18-40c9-a7b9-b3b63c7ad0c0",
+   "metadata": {},
+   "source": [
+    "# TODO:\n",
+    "\n",
+    "* restart your kernel\n",
+    "* load your data etc\n",
+    "* instead of the above steps for vectorixzatoin and tfidf and training, use a pipeline to do the same, then delete the above steps\n",
+    "* evaluate your performance on your test set\n",
+    "* is the performance good? probably no, use confusion matrix for your classifier as well\n",
+    "* run grid search to improve your model\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "4c5447cc-48c8-476f-befc-85d61c31a954",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "text_clf = Pipeline([\n",
+    "    ('vect', CountVectorizer(lowercase=True, stop_words=\"english\", strip_accents='unicode', ngram_range=(1,2))),\n",
+    "    ('tfidf', TfidfTransformer()),\n",
+    "    ('clf', RandomForestClassifier(n_jobs=-1)),\n",
+    "])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "66b7b9ae-374f-4512-8484-ec51982a1830",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "text_clf.fit(X_train, y_train)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "706e4248-a361-4aa4-9df2-6485ecc31086",
+   "metadata": {},
+   "source": [
+    "### Evaluating performance of test set"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e2e53a73-c5a5-4600-b58e-81040215a829",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "predicted = text_clf.predict(X_test)\n",
+    "np.mean(predicted == y_test)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "id": "9a8657c5-7e5f-4064-8697-90c3cbadb62d",
+   "metadata": {},
+   "source": [
+    "### Parameter tuning with grid search"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "65e55230-9510-416b-b6fd-661805fbd25f",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from sklearn.model_selection import GridSearchCV\n",
+    "\n",
+    "param_grid = {\n",
+    "    'clf__n_estimators': [50, 100, 200, 500],\n",
+    "    'clf__max_features': [2, 4, 6, 8],\n",
+    "}"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "dca91231-7ecb-4e3a-a89b-3f3fc14708fd",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "gs_clf = GridSearchCV(text_clf, param_grid, cv=5, n_jobs=-1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c85ccd12-d8f5-49e2-85df-4375f27994c4",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "gs_clf = gs_clf.fit(twenty_train.data[:400], twenty_train.target[:400])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "8b270a8c-25ee-47b2-8efe-ebf49be54838",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "twenty_train.target_names[gs_clf.predict(['God is love'])[0]]\n",
+    "\n",
+    "#below output of comp.graphics seems incorrect. in tutorial the output is soc.religion.christian"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "4d7f00c3-f4bb-42ca-824a-5213c8748ce3",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "print(\"Best parameter (CV score=%0.3f):\" % gs_clf.best_score_)\n",
+    "print(gs_clf.best_params_)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "af94bdfd-a363-4c62-9f5f-6da00e689beb",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.12"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
